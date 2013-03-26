@@ -5,8 +5,6 @@
 
 
 (defn find-files [file-name path]
-  "TODO: Implement searching for a file using his name as a regexp.
-make a search using tree-seq"
   (filter #(re-matches (re-pattern file-name) %)
     (map #(.getName %)
       (tree-seq
