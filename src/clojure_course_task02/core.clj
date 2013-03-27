@@ -3,14 +3,21 @@
   (:gen-class))
 
 
-
 (defn find-files [file-name path]
-  (filter #(re-matches (re-pattern file-name) %)
-    (map #(.getName %)
-      (tree-seq
-        #(.isDirectory %)
-        #(.listFiles %)
-        (File. path)))))
+  (let [acc (ref [])
+         pattern (re-pattern file-name)
+         walk (fn walk [p]
+                (let [lst (.listFiles p)
+                      files (->> lst
+                              (filter #(.isFile %))
+                              (map #(.getName %))
+                              (filter #(re-matches pattern %)))
+                      dirs (filter #(.isDirectory %) lst)]
+                  (dosync
+                    (alter acc concat files))
+                  (dorun (pmap (fn [x] (walk x)) dirs))))]
+    (walk (File. path))
+    (deref acc)))
 
 (defn usage []
   (println "Usage: $ run.sh file_name path"))
